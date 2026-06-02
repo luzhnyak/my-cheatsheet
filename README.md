@@ -11,4 +11,4 @@
 - [Docker helper](./docker-helper.md)
 
 ## Linux
-- [Способи подивитися в Linux, **які процеси навантажують процесор** 👇](./linux-proceses.md)
+- [Способи подивитися в Linux, **які процеси навантажують процесор**](./linux-proceses.md)
