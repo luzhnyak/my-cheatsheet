@@ -2,9 +2,9 @@
 
 ---
 
-# 1. Підготовка сервера перед встановленням CloudPanel
+# Підготовка сервера перед встановленням CloudPanel
 
-## Вимоги
+## ✅ 1. Вимоги
 
 Рекомендовано:
 
@@ -14,7 +14,26 @@
 * SSD диск
 * Статична IP-адреса
 
-## Оновлення системи
+Перевір версію:
+
+```bash
+lsb_release -a
+```
+
+---
+
+## ✅ 2. Підключення під root
+
+CloudPanel **встановлюється тільки під root**.
+
+```bash
+sudo -i whoami
+# має бути root
+```
+
+---
+
+## ✅ 3. Оновлення системи
 
 Після підключення по SSH:
 
@@ -28,7 +47,227 @@ reboot
 
 ---
 
-## Створення окремого користувача
+## ✅ 4. Коректне ім’я хоста (hostname)
+
+Обов’язково має бути **FQDN**, не `localhost`.
+
+❌ Погано:
+
+```
+localhost
+ubuntu
+```
+
+✅ Добре:
+
+```
+server.yourdomain.com
+```
+
+Перевір:
+
+```bash
+hostnamectl
+```
+
+Якщо треба змінити:
+
+```bash
+hostnamectl set-hostname server.yourdomain.com
+nano /etc/hosts
+```
+
+Додай:
+
+```
+127.0.0.1 server.yourdomain.com
+```
+
+---
+
+## ✅ 5. Вільні порти
+
+CloudPanel використовує:
+
+| Порт | Для чого      |
+| ---- | ------------- |
+| 22   | SSH           |
+| 80   | HTTP          |
+| 443  | HTTPS         |
+| 8443 | CloudPanel UI |
+
+Перевір, щоб нічого не слухало:
+
+```bash
+ss -tulpn
+```
+
+---
+
+## ✅ 6. Swap (рекомендовано, якщо ≤2GB RAM)
+
+```bash
+free -h
+```
+
+Якщо немає swap:
+
+```bash
+fallocate -l 3G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+```
+
+---
+
+## ❌ 7. Що НЕ потрібно робити
+
+* ❌ Не встановлюй nginx/apache вручну
+* ❌ Не став MySQL
+* ❌ Не налаштовуй UFW (CloudPanel сам керує)
+* ❌ Не використовуй aaPanel паралельно
+
+👉 Якщо це **свіжа Ubuntu** — ідеально.
+
+---
+
+# Встановлення CloudPanel
+
+CloudPanel рекомендує встановлювати на чисту систему.
+
+Для Ubuntu 24.04:
+
+```bash
+curl -sSL https://installer.cloudpanel.io/ce/v2/install.sh | sudo bash
+```
+
+Якщо не підхоплює базу даних, то:
+
+```bash
+curl -sSL https://installer.cloudpanel.io/ce/v2/install.sh -o install.sh
+sudo DB_ENGINE=MARIADB_10.11 bash install.sh
+```
+
+Після завершення:
+
+```bash
+sudo cloudpanel
+```
+
+Побачиш дані для входу.
+
+---
+
+## 1. Відкрити CloudPanel
+
+В браузері:
+
+```text
+https://IP_СЕРВЕРА:8443
+```
+
+або
+
+```text
+https://your-domain.com:8443
+```
+
+Створити адміністратора.
+
+---
+
+# Перші дії після встановлення
+
+## 1. Оновити CloudPanel
+
+Перевірити версію:
+
+```bash
+clpctl version
+```
+
+---
+
+---
+
+## 3️⃣ Який софт CloudPanel встановлює АВТОМАТИЧНО
+
+### 🌐 Web-сервер
+
+* **Nginx** (власна оптимізована конфігурація)
+* **Redis** (кеш)
+* **Varnish** (опційно)
+
+---
+
+### 🐘 PHP
+
+* PHP-FPM
+* Одразу кілька версій:
+
+  * 8.1
+  * 8.2
+  * 8.3 (залежить від версії CP)
+
+Можна вибирати версію PHP **на рівні сайту**.
+
+---
+
+### 🗄 База даних
+
+На вибір при встановленні:
+
+* **MariaDB 10.6+** (найчастіше)
+* або **MySQL 8.0**
+
+---
+
+### 🔐 Безпека
+
+* Fail2Ban
+* ModSecurity
+* Auto SSL (Let’s Encrypt)
+* Firewall rules
+* SSH key management
+
+---
+
+### ⚙️ Інше
+
+* Node.js (для Next.js / React / API)
+* Composer
+* Git
+* Supervisor
+* Cron
+* FTP (pure-ftpd)
+* Postfix (для системної пошти)
+
+---
+
+## 4️⃣ Що CloudPanel НЕ встановлює
+
+* Docker
+* Kubernetes
+* cPanel-сміття
+* зайві панелі/демони
+
+---
+
+## Перевірити сервіси
+
+```bash
+systemctl status nginx
+systemctl status mysql
+systemctl status redis-server
+```
+
+---
+
+# Безпека
+
+## 1. Створення окремого користувача
 
 Не працюй постійно під root.
 
@@ -59,7 +298,7 @@ root
 
 ---
 
-## Налаштування SSH-ключів
+## 2. Налаштування SSH-ключів
 
 На локальному ПК:
 
@@ -81,7 +320,7 @@ ssh admin@IP_СЕРВЕРА
 
 ---
 
-## Перенесення SSH-ключів від root до admin
+## 3. Перенесення SSH-ключів від root до admin
 
 ```bash
 sudo mkdir -p /home/admin/.ssh
@@ -93,7 +332,7 @@ sudo chmod 600 /home/admin/.ssh/authorized_keys
 
 ---
 
-# 2. Захист SSH
+## 4. Захист SSH
 
 Відредагувати:
 
@@ -115,196 +354,52 @@ PubkeyAuthentication yes
 sudo systemctl restart ssh
 ```
 
+### Змінити стандартний порт SSH 22:
+
+```bash
+sudo nano /etc/ssh/sshd_config
+```
+
+Знайдіть рядок:
+
+```text
+# Port 22
+```
+
+Розкоментуйте і змініть на потрібний порт (наприклад, 2222):
+
+```text
+Port 2222
+```
+
+Якщо використовується UFW — дозвольте новий порт
+
+Якщо ssh.socket активний і слухає порт 22, ігноруючи sshd_config. Виконайте по порядку:
+
+1. Зупиніть і вимкніть socket
+
+```bash
+bashsudo systemctl stop ssh.socket
+sudo systemctl disable ssh.socket
+```
+
+2. Перезапустіть ssh без socket
+
+```bash
+bashsudo systemctl restart ssh
+```
+
+3. Перевірте результат
+
+```bash
+bashsudo ss -tlnp | grep sshd
+```
+
 ⚠️ Не закривай поточну SSH-сесію поки не перевіриш, що нове підключення працює.
 
 ---
 
-# 3. Налаштування брандмауера
-
-Ubuntu має UFW.
-
-Дозволити:
-
-```bash
-sudo ufw allow 22/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-```
-
-Увімкнути:
-
-```bash
-sudo ufw enable
-```
-
-Перевірити:
-
-```bash
-sudo ufw status
-```
-
----
-
-# 4. Встановлення Fail2Ban
-
-Захист від перебору паролів.
-
-```bash
-sudo apt install fail2ban -y
-```
-
-Запуск:
-
-```bash
-sudo systemctl enable fail2ban
-sudo systemctl start fail2ban
-```
-
-Перевірка:
-
-```bash
-sudo fail2ban-client status
-```
-
----
-
-# 5. Встановлення CloudPanel
-
-CloudPanel рекомендує встановлювати на чисту систему.
-
-Для Ubuntu 24.04:
-
-```bash
-curl -sSL https://installer.cloudpanel.io/ce/v2/install.sh | sudo bash
-```
-
-Якщо не підхоплює базу даних, то:
-
-```bash
-curl -sSL https://installer.cloudpanel.io/ce/v2/install.sh -o install.sh
-sudo DB_ENGINE=MARIADB_10.11 bash install.sh
-```
-
-Після завершення:
-
-```bash
-sudo cloudpanel
-```
-
-Побачиш дані для входу.
-
----
-
-# 6. Відкрити CloudPanel
-
-В браузері:
-
-```text
-https://IP_СЕРВЕРА:8443
-```
-
-або
-
-```text
-https://your-domain.com:8443
-```
-
-Створити адміністратора.
-
----
-
-# 7. Перші дії після встановлення
-
-## Оновити CloudPanel
-
-Перевірити версію:
-
-```bash
-clpctl version
-```
-
----
-
-## Перевірити сервіси
-
-```bash
-systemctl status nginx
-systemctl status mysql
-systemctl status redis-server
-```
-
----
-
-# 8. Захист панелі CloudPanel
-
-Порт 8443 видно всьому інтернету.
-
-Краще обмежити доступ.
-
-Наприклад дозволити тільки свою IP:
-
-```bash
-sudo ufw allow from ВАША_IP to any port 8443
-sudo ufw deny 8443
-```
-
-Тоді панель буде доступна лише тобі.
-
----
-
-# 9. Встановлення SSL
-
-CloudPanel автоматично отримує сертифікати через Let's Encrypt.
-
-Для сайту:
-
-1. Створити Site
-2. Вказати домен
-3. SSL/TLS
-4. Issue Let's Encrypt Certificate
-
----
-
-# 10. Налаштування резервних копій
-
-CloudPanel підтримує:
-
-* S3
-* Backblaze B2
-* Wasabi
-* AWS
-
-Рекомендую не зберігати бекапи на тому самому сервері.
-
-Правильна схема:
-
-```text
-VPS
-  ↓
-Щоденний backup
-  ↓
-Backblaze B2
-```
-
----
-
-# 11. Автоматичні оновлення безпеки
-
-Встановити:
-
-```bash
-sudo apt install unattended-upgrades -y
-```
-
-Увімкнути:
-
-```bash
-sudo dpkg-reconfigure unattended-upgrades
-```
-
----
-
-# 12. Моніторинг сервера
+# Моніторинг сервера
 
 Корисні команди:
 
@@ -334,36 +429,7 @@ ss -tulpn
 
 ---
 
-# 13. Що ще варто зробити для продакшн-сервера
-
-### Вимкнути зайві сервіси
-
-Подивитися:
-
-```bash
-systemctl list-unit-files --type=service
-```
-
----
-
-### Перевірити відкриті порти
-
-```bash
-sudo ss -tulpn
-```
-
-Зазвичай повинні бути відкриті:
-
-```text
-22
-80
-443
-8443
-```
-
----
-
-### Регулярно перевіряти логи
+## Регулярно перевіряти логи
 
 ```bash
 journalctl -p err -b
@@ -374,21 +440,3 @@ tail -f /var/log/nginx/error.log
 ```
 
 ---
-
-# Оптимальна схема для сервера з CloudPanel
-
-```text
-Ubuntu 24.04 LTS
-│
-├── SSH тільки по ключах
-├── Root Login вимкнений
-├── UFW
-├── Fail2Ban
-├── CloudPanel
-├── Let's Encrypt
-├── Автоматичні оновлення
-├── Щоденні резервні копії
-└── Моніторинг ресурсів
-```
-
-Для серверів з Flask, Node.js або React я б ще додатково налаштував захист PostgreSQL/MySQL від зовнішніх підключень та показав готову конфігурацію UFW і Fail2Ban для CloudPanel. Це особливо актуально, якщо ти плануєш працювати з базами даних віддалено.

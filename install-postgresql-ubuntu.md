@@ -6,14 +6,14 @@
 
 # 🐘 1. Встановлення PostgreSQL
 
-```bash id="pg1"
+```bash
 sudo apt update
 sudo apt install -y postgresql postgresql-contrib
 ```
 
 Перевірка:
 
-```bash id="pg2"
+```bash
 sudo systemctl status postgresql
 ```
 
@@ -23,31 +23,38 @@ sudo systemctl status postgresql
 
 Заходимо в postgres:
 
-```bash id="pg3"
+```bash
 sudo -u postgres psql
-```
-
----
-
-## Створити БД:
-
-```sql id="pg4"
-CREATE DATABASE api_db;
 ```
 
 ---
 
 ## Створити користувача:
 
-```sql id="pg5"
+```sql
 CREATE USER api_user WITH PASSWORD 'strong_password_here';
 ```
 
 ---
 
+## Створити БД:
+
+```sql
+CREATE DATABASE api_db;
+```
+
+але краще вказати одразу власника, щоб далі не було проблем
+
+```sql
+CREATE DATABASE api_db OWNER api_user;
+```
+
+---
+
+
 ## Дати доступ:
 
-```sql id="pg6"
+```sql
 ALTER ROLE api_user SET client_encoding TO 'utf8';
 ALTER ROLE api_user SET default_transaction_isolation TO 'read committed';
 ALTER ROLE api_user SET timezone TO 'UTC';
@@ -57,7 +64,7 @@ GRANT ALL PRIVILEGES ON DATABASE api_db TO api_user;
 
 Вихід:
 
-```sql id="pg7"
+```sql
 \q
 ```
 
@@ -67,56 +74,74 @@ GRANT ALL PRIVILEGES ON DATABASE api_db TO api_user;
 
 У venv:
 
-```bash id="py1"
+```bash
 source /var/www/api/venv/bin/activate
-pip install psycopg2-binary sqlalchemy
+pip install psycopg2-binary
 ```
 
 
-# 🔒 11. Важлива безпека (обов’язково)
+# 🔒 4. Важлива безпека (обов’язково)
 
 ## Закрити/відкрити доступ до PostgreSQL ззовні
 
 Перевір:
 
-```bash id="sec1"
-sudo nano /etc/postgresql/14/main/postgresql.conf
+```bash
+sudo nano /etc/postgresql/16/main/postgresql.conf
 ```
+
+(версія може бути 14/15/16 — перевір через ls /etc/postgresql/)
 
 закрити:
 
-```text id="sec2"
+```text
 listen_addresses = 'localhost'
 ```
 
 відкрити:
 
-```text id="sec2.1"
-listen_addresses = 'localhost'
+```text
+listen_addresses = '*'
 ```
 
 ---
 
-## Обмежитидоступ по IP в pg_hba.conf:
+## Обмежити доступ по IP в pg_hba.conf:
 
-```bash id="sec3"
-sudo nano /etc/postgresql/14/main/pg_hba.conf
+Відкриваємо:
+
+```bash
+sudo nano /etc/postgresql/16/main/pg_hba.conf
 ```
 
 має бути:
 
-```text id="sec4"
+```text
 local   all             all                                     peer
 host    all             all             127.0.0.1/32            md5
+host    api_db          api_user        146.120.47.22/32        md5
+```
+
+пояснення:
+
+```text
+host      → TCP підключення
+api_db    → база
+api_user  → користувач
+IP/32     → тільки один IP
+md5       → парольна автентифікація
 ```
 
 ---
 
 ## перезапуск:
 
-```bash id="sec5"
+```bash
 sudo systemctl restart postgresql
 ```
 
-## відкрити порт бази даних:
+## Відкрити порт у firewall (UFW) або через CloudPanel:
 
+```bash
+sudo ufw allow from 146.120.47.22 to any port 5432
+```

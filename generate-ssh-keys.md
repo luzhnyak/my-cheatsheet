@@ -81,7 +81,7 @@ sudo systemctl restart ssh
 ## 1️⃣ Переключаємося на користувача сайту
 
 ```bash
-su - zadachky
+sudo su - zadachky
 ```
 
 ---
