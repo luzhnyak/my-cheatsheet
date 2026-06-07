@@ -1,54 +1,86 @@
-Так, потрібно ✅
+Для Ubuntu з CloudPanel найкраще встановити Node.js 22 через офіційний репозиторій NodeSource. Це дозволить отримувати оновлення через `apt` і уникнути проблем зі старими версіями з репозиторіїв Ubuntu.
 
-На CloudPanel Node.js **не встановлюється автоматично для всіх серверів**, а тільки під час додавання сайту з типом **Node.js**.
-
----
-
-### 1️⃣ Перевірка
+### 1. Перевірте поточну версію Node.js
 
 ```bash
 node -v
 npm -v
 ```
 
-Якщо версія не показується → Node.js відсутній.
+Якщо Node.js вже встановлений, подивіться версію. За потреби стару версію можна видалити.
 
 ---
 
-### 2️⃣ Встановлення через CloudPanel
+### 2. Додайте репозиторій Node.js 22
 
-1. В панелі CloudPanel → **Server → Node.js**
-2. Обери версію, наприклад: **18.x або 20.x**
-3. CloudPanel поставить Node.js глобально і зробить доступним для сайтів.
-
----
-
-### 3️⃣ Встановлення вручну (якщо хочеш через термінал)
+Оновіть систему:
 
 ```bash
-# Для Ubuntu
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
+apt update
+apt upgrade -y
 ```
 
-Перевірка:
+Встановіть необхідні пакети:
+
+```bash
+apt install -y curl ca-certificates gnupg
+```
+
+Додайте репозиторій NodeSource:
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+```
+
+---
+
+### 3. Встановіть Node.js
+
+```bash
+apt install -y nodejs
+```
+
+Перевірте:
 
 ```bash
 node -v
 npm -v
 ```
 
----
+Очікувано:
 
-### 4️⃣ Використання в CloudPanel
-
-* Коли додаєш сайт → обираєш **Node.js app**
-* Порт, версія Node.js → Supervisor буде запускати твій додаток
-
-⚠️ **Важливо:** Node.js повинен збігатися з версією, яку обираєш у сайті → інакше Supervisor може падати.
+```text
+v22.x.x
+10.x.x
+```
 
 ---
 
-Якщо хочеш, я можу скласти **короткий покроковий план: CloudPanel + Node.js + Supervisor + Next.js**, щоб за 5 хвилин деплоїти сайт.
+### 4. Перевірте шлях до Node.js
 
-Хочеш, щоб я його зробив?
+Supervisor краще працює з абсолютними шляхами:
+
+```bash
+which node
+which npm
+```
+
+Зазвичай:
+
+```text
+/usr/bin/node
+/usr/bin/npm
+```
+
+---
+
+### 5. Встановлення залежностей і запуск застосунку
+
+```bash
+npm install
+npm run build
+npm run start
+```
+
+---
+
